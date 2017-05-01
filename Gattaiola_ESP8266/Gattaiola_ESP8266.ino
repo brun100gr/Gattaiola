@@ -12,7 +12,7 @@ const char* password = "3z5cf5kaeavxf5a";
 
 void setup_serial() {
   Serial.begin(115200);
-  delay(100); 
+  delay(100);
 }
 
 void setup_wifi() {
@@ -59,10 +59,19 @@ void setup_OTA() {
 
 void setup_RTC() {
     setSyncProvider(RTC.get);   // the function to get the time from the RTC
-    if(timeStatus() != timeSet) 
+    if(timeStatus() != timeSet) {
         Serial.println("Unable to sync with the RTC");
-    else
-        Serial.println("RTC has set the system time");     
+    }else {
+        Serial.println("RTC has set the system time");
+    }
+    
+    bool stopped = RTC.oscStopped();
+    if (stopped) {
+        Serial.println("Detected clock power loss - resetting RTC date");
+    }
+    else {
+        Serial.println("Clock did not lose power");
+    }
 }
 
 void setup() {
