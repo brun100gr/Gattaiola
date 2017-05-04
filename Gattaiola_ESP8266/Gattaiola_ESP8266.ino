@@ -1,4 +1,5 @@
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
@@ -13,8 +14,12 @@
 const char* ssid = "AndroidAP";
 const char* password = "wwfk6438";
 
+const int port = 9876;
+ESP8266WebServer server(port);
+
 bool stringComplete = false;
 String incomingString = "";
+String mainPage = "<html><head></head><body>Ciao</body></html>";
 
 void setup_serial() {
   Serial.begin(115200);
@@ -81,18 +86,28 @@ void setup_RTC() {
     }
 }
 
+void setup_Server(void)
+{
+  server.on("/", handleMain);
+  server.begin(); // start TCP server
+  Serial.println("HTTP server started");
+
+}
+
 void setup() {
   setup_serial();
   setup_wifi();
   setup_OTA();
   setup_RTC();
+  setup_Server();
 }
 
 void loop() {
+  server.handleClient();
   ArduinoOTA.handle();
   digitalClockDisplay();
   delay(1000);
-//  memoryDump();
+//  RTCMemoryDump();
   while (Serial.available())
   {
     char inChar = (char)Serial.read();
@@ -140,7 +155,7 @@ void printDigits(int digits)
     Serial.print(digits);
 }
 
-void memoryDump(void)
+void RTCMemoryDump(void)
 {
   String dump = "RTC Memory Dump: ";
   Serial.print(dump);
@@ -158,3 +173,6 @@ void memoryDump(void)
   Serial.println(dump);
 }
 
+void handleMain() {
+  server.send(200, "text/html", mainPage);
+}
