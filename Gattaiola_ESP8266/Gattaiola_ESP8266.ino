@@ -7,8 +7,14 @@
 #include <TimeLib.h>
 #include <Wire.h>      //http://arduino.cc/en/Reference/Wire
 
-const char* ssid = "Vodafone-34176832";
-const char* password = "3z5cf5kaeavxf5a";
+//const char* ssid = "Vodafone-34176832";
+//const char* password = "3z5cf5kaeavxf5a";
+
+const char* ssid = "AndroidAP";
+const char* password = "wwfk6438";
+
+bool stringComplete = false;
+String incomingString = "";
 
 void setup_serial() {
   Serial.begin(115200);
@@ -68,6 +74,7 @@ void setup_RTC() {
     bool stopped = RTC.oscStopped();
     if (stopped) {
         Serial.println("Detected clock power loss - resetting RTC date");
+        // TODO: restore the date
     }
     else {
         Serial.println("Clock did not lose power");
@@ -75,7 +82,6 @@ void setup_RTC() {
 }
 
 void setup() {
-  Serial.println("Booting");
   setup_serial();
   setup_wifi();
   setup_OTA();
@@ -86,7 +92,28 @@ void loop() {
   ArduinoOTA.handle();
   digitalClockDisplay();
   delay(1000);
+//  memoryDump();
+  while (Serial.available())
+  {
+    char inChar = (char)Serial.read();
+    incomingString += inChar;
+    if (inChar == '\n')
+    {
+      stringComplete = true;
+    }
+  }
+
+  if(stringComplete)
+  {
+    int value = incomingString.toInt();
+    Serial.print("---->111: ");
+    Serial.println(value);
+    RTC.set(value);
+    setSyncProvider(RTC.get);
+    stringComplete = false;
+  }
 }
+
 
 void digitalClockDisplay(void)
 {
@@ -111,5 +138,23 @@ void printDigits(int digits)
     if(digits < 10)
         Serial.print('0');
     Serial.print(digits);
+}
+
+void memoryDump(void)
+{
+  String dump = "RTC Memory Dump: ";
+  Serial.print(dump);
+  char tmp[16] = {0};
+  for (int i = 0; i < 0x100; i++)
+  {
+    if(i%0x10 == 0)
+    {
+      sprintf(tmp, "0x%02X", i);
+      dump += "\n  " + (String)tmp + "  ";
+    }
+    sprintf(tmp, "%02X ", RTC.readRTC(i));
+    dump += (String)tmp;
+  }
+  Serial.println(dump);
 }
 
